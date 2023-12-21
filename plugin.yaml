@@ -1,0 +1,11 @@
+---
+name: "rt-logs"
+version: "0.0.1"
+usage: "watch logs and events in realtime"
+description: |-
+  Select your release and send output of release pods into your CI/CD pipeline
+ignoreFlags: false
+useTunnel: true
+command: "$HELM_PLUGIN_DIR/helm-rt-logs"
+hooks:
+  install: "$HELM_PLUGIN_DIR/install.sh"
