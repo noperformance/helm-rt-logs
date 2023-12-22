@@ -6,7 +6,7 @@ if [ -n "${HELM_LINTER_PLUGIN_NO_INSTALL_HOOK}" ]; then
 fi
 
 # shellcheck disable=SC2002
-version="$(cat plugin.yaml | grep "version" | cut -d '"' -f 2)"
+version="$(cat plugin.yaml | grep "version" | cut -d '"' -f 2 | cut -d 'v' -f 2)"
 echo "Downloading and installing helm-rt-logs v${version} ..."
 
 url=""
