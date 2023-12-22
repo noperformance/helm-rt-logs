@@ -43,9 +43,9 @@ Usage:
 
 Flags:
   -h, --help                 help for rtlogs
-  -s, --stop-string string   string to stop the logs
+      --stop-string string   string to stop the logs
       --stop-timeout int     timeout to stop the logs, in Seconds!
-  -f, --time-since int       time since to start the logs
+  -s, --time-since int       time since to start the logs
 ```
 
 no old helm! 

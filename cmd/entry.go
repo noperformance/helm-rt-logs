@@ -49,8 +49,8 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 	f := cmd.Flags()
 
 	f.IntVar(&rtl.stopTimeout, "stop-timeout", 0, "timeout to stop the logs, in Seconds!")
-	f.StringVarP(&rtl.stopString, "stop-string", "s", "", "string to stop the logs")
-	f.Int64VarP(&rtl.timeSince, "time-since", "f", 0, "time since to start the logs")
+	f.StringVar(&rtl.stopString, "stop-string", "", "string to stop the logs")
+	f.Int64VarP(&rtl.timeSince, "time-since", "s", 0, "time since to start the logs")
 
 	return cmd
 }
