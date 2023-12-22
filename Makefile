@@ -1,54 +1,22 @@
-HELM_HOME ?= $(shell helm home)
-HELM_PLUGIN_DIR ?= $(HELM_HOME)/plugins/helm-rt-logs
-VERSION := $(shell sed -n -e 's/version:[ "]*\([^"]*\).*/\1/p' plugin.yaml)
-DIST := $(CURDIR)/_dist
+HELM_PLUGIN_NAME := rt-logs
 LDFLAGS := "-X main.version=${VERSION}"
-BINARY := "helm-rt-logs"
-DOCKER_IMAGE ?= containersol/helm-rt-logs
-DOCKER_TAG ?= latest
-
-# go mod ftw
-unexport GOPATH
-GO111MODULE = on
-
-.PHONY: install
-install: build
-	cp $(BINARY) $(HELM_PLUGIN_DIR)
-	cp plugin.yaml $(HELM_PLUGIN_DIR)
+MOD_PROXY_URL ?= https://goproxy.io
 
 .PHONY: build
 build:
-	go build -o $(BINARY) -ldflags $(LDFLAGS) ./cmd/...
+	export CGO_ENABLED=0 && \
+	go build -o bin/${HELM_PLUGIN_NAME} -ldflags $(LDFLAGS) .
 
-.PHONY: build.docker
-build.docker:
-	docker build \
-		--build-arg LDFLAGS=$(LDFLAGS) \
-		--cache-from ${DOCKER_IMAGE} \
-		-t ${DOCKER_IMAGE}:$(DOCKER_TAG) .
-
-.PHONY: dist
-dist:
-	mkdir -p $(DIST)
-	GOOS=linux GOARCH=amd64 go build -o $(BINARY) -ldflags $(LDFLAGS) ./cmd/...
-	tar -zcvf $(DIST)/helm-rt-logs_linux_$(VERSION).tar.gz $(BINARY) README.md LICENSE plugin.yaml
-	GOOS=darwin GOARCH=amd64 go build -o $(BINARY) -ldflags $(LDFLAGS) ./cmd/...
-	tar -zcvf $(DIST)/helm-rt-logs_darwin_$(VERSION).tar.gz $(BINARY) README.md LICENSE plugin.yaml
-	GOOS=windows GOARCH=amd64 go build -o $(BINARY).exe -ldflags $(LDFLAGS) ./cmd/...
-	tar -zcvf $(DIST)/helm-rt-logs_windows_$(VERSION).tar.gz $(BINARY).exe README.md LICENSE plugin.yaml
-
-.PHONY: test-all
-test-all: vet lint test
+.PHONY: bootstrap
+bootstrap:
+	export GO111MODULE=on && \
+	export GOPROXY=$(MOD_PROXY_URL) && \
+	go mod download
 
 .PHONY: test
 test:
-	go test -v -parallel=4 ./cmd/...
+	go test -v ./...
 
-.PHONY: lint
-lint:
-	@go get -u golang.org/x/lint/golint
-	go list ./cmd/... | xargs -n1 $${HOME}/go/bin/golint
-
-.PHONY: vet
-vet:
-	go vet ./cmd/...
+.PHONY: tag
+tag:
+	@scripts/tag.sh

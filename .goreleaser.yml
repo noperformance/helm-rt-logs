@@ -1,0 +1,22 @@
+builds:
+  - main: .
+    binary: helm-rt-logs
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+archives:
+  - id: archive
+    format: tar.gz
+    files:
+      - README.md
+      - LICENSE
+      - plugin.yaml
+      - scripts/install_plugin.sh
+checksum:
+  name_template: 'checksums.txt'
