@@ -27,6 +27,9 @@ jobs:
   untagged-build:
     docker:
       - image: go:1.21
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
     steps:
       - checkout
       - run:
@@ -35,6 +38,9 @@ jobs:
   tagged-build:
     docker:
       - image: go:1.21
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASS
     steps:
       - checkout
       - run:

@@ -6,6 +6,7 @@ description: |-
   Select your release and send output of release pods into your CI/CD pipeline
 ignoreFlags: false
 useTunnel: true
-command: "$HELM_PLUGIN_DIR/helm-rt-logs"
+command: "$HELM_PLUGIN_DIR/bin/helm-rt-logs"
 hooks:
-  install: "$HELM_PLUGIN_DIR/install.sh"
+  install: "cd $HELM_PLUGIN_DIR; scripts/install_plugin.sh"
+  update: "cd $HELM_PLUGIN_DIR; scripts/install_plugin.sh"
