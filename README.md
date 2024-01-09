@@ -45,8 +45,10 @@ Flags:
   -h, --help                    help for rtlogs
       --stop-string string      string to stop the logs
       --stop-timeout int        timeout to stop the logs, in Seconds!
+      --kube-context string     kube context
   -s, --time-since int          time since to start the logs
-  -wt, --wait-fail-pods-timeout time to wait until pods get Running phase
+  -t, --wait-fail-pods-timeout  time to wait until pods get Running phase
+  -d, --debug                   enables debug messages
 ```
 
 no old helm! 

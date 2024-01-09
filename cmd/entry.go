@@ -20,6 +20,7 @@ type rtLogsCmd struct {
 	cfg                     *action.Configuration // action configuration
 	waitingFailedPodTimeout int                   // waiting for Running phase in seconds timeout
 	debug                   bool                  // for debug, you know
+	kubeContext             string
 }
 
 var (
@@ -55,6 +56,7 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 	f.Int64VarP(&rtl.timeSince, "time-since", "s", 0, "time since to start the logs")
 	f.IntVarP(&rtl.waitingFailedPodTimeout, "wait-fail-pods-timeout", "t", 60, "waiting for Running phase pods timeout")
 	f.BoolVarP(&rtl.debug, "debug", "d", false, "enable debug")
+	f.StringVar(&rtl.kubeContext, "kube-context", "", "set context")
 
 	return cmd
 }
@@ -63,13 +65,20 @@ func (e *rtLogsCmd) run() error {
 
 	getRelease := action.NewGet(e.cfg)
 
+	var kubeContext string
+	if e.kubeContext != "" {
+		kubeContext = e.kubeContext
+	} else {
+		kubeContext = e.env.KubeContext // Use the default context if --kube-context is not set
+	}
+
 	// getRelease.Version = 0
 	res, err := getRelease.Run(e.release)
 	if err != nil {
 		return err
 	}
 
-	clientset, err := kubeclient.NewKubeClient(e.env.KubeContext, e.env.KubeConfig)
+	clientset, err := kubeclient.NewKubeClient(kubeContext, e.env.KubeConfig)
 	if err != nil {
 		return err
 	}
