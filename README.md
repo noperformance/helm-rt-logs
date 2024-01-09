@@ -42,10 +42,11 @@ Usage:
   rtlogs [flags] RELEASE
 
 Flags:
-  -h, --help                 help for rtlogs
-      --stop-string string   string to stop the logs
-      --stop-timeout int     timeout to stop the logs, in Seconds!
-  -s, --time-since int       time since to start the logs
+  -h, --help                    help for rtlogs
+      --stop-string string      string to stop the logs
+      --stop-timeout int        timeout to stop the logs, in Seconds!
+  -s, --time-since int          time since to start the logs
+  -wt, --wait-fail-pods-timeout time to wait until pods get Running phase
 ```
 
 no old helm! 

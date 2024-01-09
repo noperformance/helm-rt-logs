@@ -11,13 +11,14 @@ import (
 )
 
 type rtLogsCmd struct {
-	release     string    // release name
-	out         io.Writer // output stream
-	stopTimeout int       // timeout to stop the logs
-	timeSince   int64     // time since to start the logs
-	stopString  string    // string to stop the logs
-	env         *cli.EnvSettings
-	cfg         *action.Configuration // action configuration
+	release                 string    // release name
+	out                     io.Writer // output stream
+	stopTimeout             int       // timeout to stop the logs
+	timeSince               int64     // time since to start the logs
+	stopString              string    // string to stop the logs
+	env                     *cli.EnvSettings
+	cfg                     *action.Configuration // action configuration
+	waitingFailedPodTimeout int                   // waiting for Running phase in seconds timeout
 }
 
 var (
@@ -51,6 +52,7 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 	f.IntVar(&rtl.stopTimeout, "stop-timeout", 0, "timeout to stop the logs, in Seconds!")
 	f.StringVar(&rtl.stopString, "stop-string", "", "string to stop the logs")
 	f.Int64VarP(&rtl.timeSince, "time-since", "s", 0, "time since to start the logs")
+	f.IntVarP(&rtl.waitingFailedPodTimeout, "wait-fail-pods-timeout", "wt", 60, "waiting for Running phase pods timeout")
 
 	return cmd
 }
@@ -70,9 +72,10 @@ func (e *rtLogsCmd) run() error {
 	}
 
 	c := collector.RtLogsOpts{
-		StopTimeout: e.stopTimeout,
-		StopString:  e.stopString,
-		TimeSince:   e.timeSince,
+		StopTimeout:             e.stopTimeout,
+		StopString:              e.stopString,
+		TimeSince:               e.timeSince,
+		WaitingFailedPodTimeout: e.waitingFailedPodTimeout,
 	}
 
 	collector.CollectLogs(collector.Collector{

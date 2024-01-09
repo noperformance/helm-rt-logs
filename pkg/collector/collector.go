@@ -15,9 +15,10 @@ import (
 )
 
 type RtLogsOpts struct {
-	StopTimeout int
-	StopString  string
-	TimeSince   int64
+	StopTimeout             int
+	StopString              string
+	TimeSince               int64
+	WaitingFailedPodTimeout int
 }
 
 type Collector struct {
@@ -43,22 +44,42 @@ func CollectLogs(c Collector) error {
 	}
 
 	for _, pod := range pods.Items {
-		go tailLogs(ctx, c.KubeClient, pod, c.Opts.StopString, cancel, c.Opts.TimeSince)
+		go tailLogs(ctx, c.KubeClient, pod, c.Opts.StopString, cancel, c.Opts.TimeSince, c.Opts.WaitingFailedPodTimeout)
 	}
 
 	<-ctx.Done()
+	cancel()
 	return nil
 }
 
-func tailLogs(ctx context.Context, clientset *kubernetes.Clientset, pod corev1.Pod, stopOnString string, cancelFunc context.CancelFunc, timeSince int64) {
+func tailLogs(ctx context.Context, clientset *kubernetes.Clientset, pod corev1.Pod, stopOnString string, cancelFunc context.CancelFunc, timeSince int64, waitingfailedpodtimeout int) {
 
-	var podLogOptions corev1.PodLogOptions
+	var (
+		podLogOptions corev1.PodLogOptions
+		podFailedMap  map[string]int
+	)
 
 	if timeSince > 0 {
 		podLogOptions.SinceSeconds = &timeSince
 	}
 
 	podLogOptions.Follow = true
+
+	for pod.Status.Phase != "Running" {
+		if _, ok := podFailedMap[pod.Name]; ok {
+			podFailedMap[pod.Name] += 1
+		} else {
+			podFailedMap[pod.Name] = 0
+		}
+
+		if podFailedMap[pod.Name] >= (waitingfailedpodtimeout / 10) {
+			log.Printf("Pod %s failed with 60s timeout \n with message: %s\n with reason: %s\n", pod.Name, pod.Status.Message, pod.Status.Reason)
+			return
+		}
+
+		time.Sleep(10 * time.Second)
+		log.Printf("Pod %s not in Running phase, waiting 10s..", pod.Name)
+	}
 
 	req := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOptions)
 	stream, err := req.Stream(ctx)
@@ -67,16 +88,6 @@ func tailLogs(ctx context.Context, clientset *kubernetes.Clientset, pod corev1.P
 		return
 	}
 	defer stream.Close()
-
-	//describe, _ := clientset.CoreV1().Events(pod.Namespace).List(ctx, v1.ListOptions{FieldSelector: fmt.Sprintf("involvedObject.name=%s", pod.Name)}) //.Watch(ctx, v1.ListOptions{Limit: 100}) //.List(ctx, v1.ListOptions{Watch: true})
-	//
-	//log.Printf("%v", describe.String())
-	//
-	////defer describe.Stop()
-	//
-	//for k, v := range describe.Items {
-	//	log.Printf("[PodName: %v][eventIndex: %v] Name: %v | Message: %v | Reason:  %v \n", pod.Name, k, v.Name, v.Message, v.Reason)
-	//}
 
 	buf := make([]byte, 2000)
 	for {
