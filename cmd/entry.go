@@ -60,6 +60,7 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 func (e *rtLogsCmd) run() error {
 
 	getRelease := action.NewGet(e.cfg)
+
 	// getRelease.Version = 0
 	res, err := getRelease.Run(e.release)
 	if err != nil {

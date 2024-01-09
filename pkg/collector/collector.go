@@ -36,15 +36,44 @@ func CollectLogs(c Collector) error {
 		})
 	}
 
-	pods, err := c.KubeClient.CoreV1().Pods(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{
+	helmLabel := v1.ListOptions{
 		LabelSelector: fmt.Sprintf("meta.helm.sh/release-name=%s", c.ReleaseInfo.Name),
-	})
+	}
+
+	deployments, err := c.KubeClient.AppsV1().Deployments(c.ReleaseInfo.Namespace).List(ctx, helmLabel)
+	if err != nil {
+		return err
+	}
+	statefullsets, err := c.KubeClient.AppsV1().StatefulSets(c.ReleaseInfo.Namespace).List(ctx, helmLabel)
+	if err != nil {
+		return err
+	}
+	daemonsets, err := c.KubeClient.AppsV1().DaemonSets(c.ReleaseInfo.Namespace).List(ctx, helmLabel)
 	if err != nil {
 		return err
 	}
 
-	for _, pod := range pods.Items {
-		go tailLogs(ctx, c.KubeClient, pod, c.Opts.StopString, cancel, c.Opts.TimeSince, c.Opts.WaitingFailedPodTimeout)
+	getPods := func(selector *v1.LabelSelector) {
+		pods, _ := c.KubeClient.CoreV1().Pods(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{
+			LabelSelector: v1.FormatLabelSelector(selector),
+		})
+
+		for _, pod := range pods.Items {
+			go tailLogs(ctx, c.KubeClient, pod, c.Opts.StopString, cancel, c.Opts.TimeSince, c.Opts.WaitingFailedPodTimeout)
+		}
+
+	}
+
+	for _, d := range deployments.Items {
+		getPods(d.Spec.Selector)
+	}
+
+	for _, s := range statefullsets.Items {
+		getPods(s.Spec.Selector)
+	}
+
+	for _, ds := range daemonsets.Items {
+		getPods(ds.Spec.Selector)
 	}
 
 	<-ctx.Done()
