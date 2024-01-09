@@ -2,7 +2,6 @@ package collector
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -27,6 +26,62 @@ type Collector struct {
 	Opts        *RtLogsOpts
 }
 
+func processResources(c *Collector, resourceType string, resourceNames []string, cancel context.CancelFunc, ctx context.Context) error {
+	for _, resourceName := range resourceNames {
+		pods, err := getPodsFromResource(c, resourceType, resourceName)
+		if err != nil {
+			return err
+		}
+		for _, pod := range pods {
+			go tailLogs(ctx, c.KubeClient, pod, c.Opts.StopString, cancel, c.Opts.TimeSince, c.Opts.WaitingFailedPodTimeout, resourceType, resourceName)
+		}
+	}
+	return nil
+}
+
+func getPodsFromResource(c *Collector, resourceType string, resourceName string) ([]corev1.Pod, error) {
+	var labelSelector string
+
+	switch resourceType {
+	case "deployment":
+		deployment, err := c.KubeClient.AppsV1().Deployments(c.ReleaseInfo.Namespace).Get(context.Background(), resourceName, v1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		labelSelector = v1.FormatLabelSelector(deployment.Spec.Selector)
+	case "statefulset":
+		sts, err := c.KubeClient.AppsV1().StatefulSets(c.ReleaseInfo.Namespace).Get(context.Background(), resourceName, v1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		labelSelector = v1.FormatLabelSelector(sts.Spec.Selector)
+	case "daemonset":
+		ds, err := c.KubeClient.AppsV1().DaemonSets(c.ReleaseInfo.Namespace).Get(context.Background(), resourceName, v1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		labelSelector = v1.FormatLabelSelector(ds.Spec.Selector)
+	}
+
+	pods, err := c.KubeClient.CoreV1().Pods(c.ReleaseInfo.Namespace).List(context.Background(), v1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pods.Items, nil
+}
+
+func filterByAnnotation(resources []v1.ObjectMeta, annotation, value string) []string {
+	var filtered []string
+	for _, resource := range resources {
+		if resource.Annotations[annotation] == value {
+			filtered = append(filtered, resource.Name)
+		}
+	}
+	return filtered
+}
+
 func CollectLogs(c Collector) error {
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -36,52 +91,54 @@ func CollectLogs(c Collector) error {
 		})
 	}
 
-	helmLabel := v1.ListOptions{
-		LabelSelector: fmt.Sprintf("meta.helm.sh/release-name=%s", c.ReleaseInfo.Name),
-	}
-
-	deployments, err := c.KubeClient.AppsV1().Deployments(c.ReleaseInfo.Namespace).List(ctx, helmLabel)
-	if err != nil {
-		return err
-	}
-	statefullsets, err := c.KubeClient.AppsV1().StatefulSets(c.ReleaseInfo.Namespace).List(ctx, helmLabel)
-	if err != nil {
-		return err
-	}
-	daemonsets, err := c.KubeClient.AppsV1().DaemonSets(c.ReleaseInfo.Namespace).List(ctx, helmLabel)
+	deployments, err := c.KubeClient.AppsV1().Deployments(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
-	getPods := func(selector *v1.LabelSelector) {
-		pods, _ := c.KubeClient.CoreV1().Pods(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{
-			LabelSelector: v1.FormatLabelSelector(selector),
-		})
-
-		for _, pod := range pods.Items {
-			go tailLogs(ctx, c.KubeClient, pod, c.Opts.StopString, cancel, c.Opts.TimeSince, c.Opts.WaitingFailedPodTimeout)
-		}
-
+	statefullsets, err := c.KubeClient.AppsV1().StatefulSets(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{})
+	if err != nil {
+		return err
 	}
 
+	daemonsets, err := c.KubeClient.AppsV1().DaemonSets(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	var deploymentMetas []v1.ObjectMeta
 	for _, d := range deployments.Items {
-		getPods(d.Spec.Selector)
+		deploymentMetas = append(deploymentMetas, d.ObjectMeta)
 	}
 
-	for _, s := range statefullsets.Items {
-		getPods(s.Spec.Selector)
+	var stsMetas []v1.ObjectMeta
+	for _, d := range statefullsets.Items {
+		deploymentMetas = append(stsMetas, d.ObjectMeta)
 	}
 
-	for _, ds := range daemonsets.Items {
-		getPods(ds.Spec.Selector)
+	var dsMetas []v1.ObjectMeta
+	for _, d := range daemonsets.Items {
+		deploymentMetas = append(dsMetas, d.ObjectMeta)
 	}
 
+	filteredDeployments := filterByAnnotation(deploymentMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name)
+	filteredStatefullsets := filterByAnnotation(stsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name)
+	filteredDaemonsets := filterByAnnotation(dsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name)
+
+	if err := processResources(&c, "deployment", filteredDeployments, cancel, ctx); err != nil {
+		return err
+	}
+	if err := processResources(&c, "statefulset", filteredStatefullsets, cancel, ctx); err != nil {
+		return err
+	}
+	if err := processResources(&c, "daemonset", filteredDaemonsets, cancel, ctx); err != nil {
+		return err
+	}
 	<-ctx.Done()
-	cancel()
 	return nil
 }
 
-func tailLogs(ctx context.Context, clientset *kubernetes.Clientset, pod corev1.Pod, stopOnString string, cancelFunc context.CancelFunc, timeSince int64, waitingfailedpodtimeout int) {
+func tailLogs(ctx context.Context, clientset *kubernetes.Clientset, pod corev1.Pod, stopOnString string, cancelFunc context.CancelFunc, timeSince int64, waitingfailedpodtimeout int, resType, resName string) {
 
 	var (
 		podLogOptions corev1.PodLogOptions
@@ -135,7 +192,7 @@ func tailLogs(ctx context.Context, clientset *kubernetes.Clientset, pod corev1.P
 
 			if n > 0 {
 				line := string(buf[:n])
-				log.Printf("[Name: %v][Phase: %v] %v \n --- \n", pod.Name, pod.Status.Phase, line)
+				log.Printf("[Type: %v][ObjName: %v][PodName: %v][Phase: %v] %v \n --- \n", resType, resName, pod.Name, pod.Status.Phase, line)
 				if stopOnString != "" && strings.Contains(line, stopOnString) {
 					cancelFunc()
 					return
