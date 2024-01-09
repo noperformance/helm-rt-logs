@@ -37,7 +37,7 @@ func CollectLogs(c Collector) error {
 	}
 
 	pods, err := c.KubeClient.CoreV1().Pods(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{
-		LabelSelector: fmt.Sprintf("app.kubernetes.io/name=%s", c.ReleaseInfo.Name),
+		LabelSelector: fmt.Sprintf("meta.helm.sh/release-name=%s", c.ReleaseInfo.Name),
 	})
 	if err != nil {
 		return err
