@@ -19,6 +19,7 @@ type rtLogsCmd struct {
 	env                     *cli.EnvSettings
 	cfg                     *action.Configuration // action configuration
 	waitingFailedPodTimeout int                   // waiting for Running phase in seconds timeout
+	debug                   bool                  // for debug, you know
 }
 
 var (
@@ -53,6 +54,7 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 	f.StringVar(&rtl.stopString, "stop-string", "", "string to stop the logs")
 	f.Int64VarP(&rtl.timeSince, "time-since", "s", 0, "time since to start the logs")
 	f.IntVarP(&rtl.waitingFailedPodTimeout, "wait-fail-pods-timeout", "t", 60, "waiting for Running phase pods timeout")
+	f.BoolVarP(&rtl.debug, "debug", "d", false, "enable debug")
 
 	return cmd
 }
@@ -77,13 +79,18 @@ func (e *rtLogsCmd) run() error {
 		StopString:              e.stopString,
 		TimeSince:               e.timeSince,
 		WaitingFailedPodTimeout: e.waitingFailedPodTimeout,
+		Debug:                   e.debug,
 	}
 
-	collector.CollectLogs(collector.Collector{
+	err = collector.CollectLogs(collector.Collector{
 		KubeClient:  clientset,
 		ReleaseInfo: res,
 		Opts:        &c,
 	})
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -18,6 +18,7 @@ type RtLogsOpts struct {
 	StopString              string
 	TimeSince               int64
 	WaitingFailedPodTimeout int
+	Debug                   bool
 }
 
 type Collector struct {
@@ -96,14 +97,26 @@ func CollectLogs(c Collector) error {
 		return err
 	}
 
+	if c.Opts.Debug {
+		log.Info("Here deployments list: ", deployments)
+	}
+
 	statefullsets, err := c.KubeClient.AppsV1().StatefulSets(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
+	if c.Opts.Debug {
+		log.Info("Here statefullsets list: ", statefullsets)
+	}
+
 	daemonsets, err := c.KubeClient.AppsV1().DaemonSets(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{})
 	if err != nil {
 		return err
+	}
+
+	if c.Opts.Debug {
+		log.Info("Here daemonsets list: ", daemonsets)
 	}
 
 	var deploymentMetas []v1.ObjectMeta
@@ -124,6 +137,12 @@ func CollectLogs(c Collector) error {
 	filteredDeployments := filterByAnnotation(deploymentMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name)
 	filteredStatefullsets := filterByAnnotation(stsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name)
 	filteredDaemonsets := filterByAnnotation(dsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name)
+
+	if c.Opts.Debug {
+		log.Info("Here filtered deployments list: ", filteredDeployments)
+		log.Info("Here filtered statefullsets list: ", filteredStatefullsets)
+		log.Info("Here filtered daemonsets list: ", filteredDaemonsets)
+	}
 
 	if err := processResources(&c, "deployment", filteredDeployments, cancel, ctx); err != nil {
 		return err
