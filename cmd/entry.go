@@ -52,7 +52,7 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 	f.IntVar(&rtl.stopTimeout, "stop-timeout", 0, "timeout to stop the logs, in Seconds!")
 	f.StringVar(&rtl.stopString, "stop-string", "", "string to stop the logs")
 	f.Int64VarP(&rtl.timeSince, "time-since", "s", 0, "time since to start the logs")
-	f.IntVarP(&rtl.waitingFailedPodTimeout, "wait-fail-pods-timeout", "wt", 60, "waiting for Running phase pods timeout")
+	f.IntVarP(&rtl.waitingFailedPodTimeout, "wait-fail-pods-timeout", "t", 60, "waiting for Running phase pods timeout")
 
 	return cmd
 }
