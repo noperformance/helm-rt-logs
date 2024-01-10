@@ -22,7 +22,6 @@ func main() {
 	if kubeConfigEnv == "" {
 		home := homedir.HomeDir()
 		kubeConfigEnv = filepath.Join(home, ".kube", "config")
-		log.Warn("Using default kubeconfig:", kubeConfigEnv)
 		settings.KubeConfig = kubeConfigEnv
 	}
 

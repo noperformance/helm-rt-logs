@@ -6,11 +6,20 @@ import (
 )
 
 func NewKubeClient(context, file string) (*kubernetes.Clientset, error) {
-	config, err := clientcmd.BuildConfigFromFlags(context, file)
+
+	kconf, err := clientcmd.BuildConfigFromFlags("", file)
 	if err != nil {
 		return nil, err
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
+	configLoadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: file}
+	configOverrides := &clientcmd.ConfigOverrides{CurrentContext: context}
+
+	kconf, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(configLoadingRules, configOverrides).ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	clientset, err := kubernetes.NewForConfig(kconf)
 	return clientset, err
 }
