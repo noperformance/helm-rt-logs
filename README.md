@@ -45,6 +45,7 @@ Flags:
   -h, --help                    help for rtlogs
       --stop-string string      string to stop the logs
       --stop-timeout int        timeout to stop the logs, in Seconds!
+      --only-failed             tail logs only from failed pods
   -s, --time-since int          time since to start the logs
   -t, --wait-fail-pods-timeout  time to wait until pods get Running phase
   -d, --debug                   enables debug messages

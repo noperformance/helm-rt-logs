@@ -1,28 +1,35 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/cobra"
+	"io"
+	"os"
+
 	"helm-rt-logs/pkg/collector"
 	"helm-rt-logs/pkg/kubeclient"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
-	"io"
+
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
 )
 
 type rtLogsCmd struct {
-	release                 string    // release name
-	out                     io.Writer // output stream
-	stopTimeout             int       // timeout to stop the logs
-	timeSince               int64     // time since to start the logs
-	stopString              string    // string to stop the logs
-	env                     *cli.EnvSettings
-	cfg                     *action.Configuration // action configuration
-	waitingFailedPodTimeout int                   // waiting for Running phase in seconds timeout
-	debug                   bool                  // for debug, you know
+	release                 string // release name
+	stopTimeout             int    // timeout to stop the tail
+	timeSince               int64  // time since to start the tail
+	stopString              string // string to stop the tail
+	waitingFailedPodTimeout int    // waiting for Running phase in seconds timeout
+	onlyFailed              bool   // tail only non-running pods
+
+	debug bool // for debug, you know
+
+	out io.Writer // output stream
+	env *cli.EnvSettings
+	cfg *action.Configuration // action configuration
+
 }
 
 var (
@@ -57,6 +64,7 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 	f.StringVar(&rtl.stopString, "stop-string", "", "string to stop the logs")
 	f.Int64VarP(&rtl.timeSince, "time-since", "s", 0, "time since to start the logs")
 	f.IntVarP(&rtl.waitingFailedPodTimeout, "wait-fail-pods-timeout", "t", 60, "waiting for Running phase pods timeout")
+	f.BoolVarP(&rtl.onlyFailed, "only-failed", "o", false, "tail only pods that have non Running phase")
 	f.BoolVarP(&rtl.debug, "debug", "d", false, "enable debug")
 
 	return cmd
@@ -93,14 +101,21 @@ func (e *rtLogsCmd) run() error {
 		StopString:              e.stopString,
 		TimeSince:               e.timeSince,
 		WaitingFailedPodTimeout: e.waitingFailedPodTimeout,
+		OnlyFailed:              e.onlyFailed,
 		Debug:                   e.debug,
 	}
 
-	err = collector.CollectLogs(collector.Collector{
-		KubeClient:  clientset,
-		ReleaseInfo: res,
-		Opts:        &c,
-	})
+	ctx, cancel := context.WithCancel(context.Background())
+
+	newCollector := collector.Collector{
+		KubeClient:     clientset,
+		ReleaseInfo:    res,
+		Opts:           &c,
+		Ctx:            ctx,
+		CancelFunction: cancel,
+	}
+
+	err = newCollector.CollectLogs()
 
 	if err != nil {
 		return err
