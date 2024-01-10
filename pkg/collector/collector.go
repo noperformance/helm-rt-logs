@@ -73,9 +73,14 @@ func getPodsFromResource(c *Collector, resourceType string, resourceName string)
 	return pods.Items, nil
 }
 
-func filterByAnnotation(resources []v1.ObjectMeta, annotation, value string) []string {
+func filterByAnnotation(resources []v1.ObjectMeta, annotation, value string, debug bool) []string {
 	var filtered []string
 	for _, resource := range resources {
+		if debug {
+			log.Info("\n\n [Filtreing]")
+			log.Info("\n [Filtreing][annotation] ", resource.Annotations[annotation])
+			log.Info("\n [Filtreing][value] ", value)
+		}
 		if resource.Annotations[annotation] == value {
 			filtered = append(filtered, resource.Name)
 		}
@@ -100,10 +105,11 @@ func CollectLogs(c Collector) error {
 	if c.Opts.Debug {
 		log.Info("Here deployments list: \n")
 		for _, v := range deployments.Items {
-			log.Info("\n\nName: ", v.Name)
-			log.Info("\nSpec: ", v.Spec)
-			log.Info("\nLabels: ", v.Labels)
-			log.Info("\nAnnotations", v.Annotations)
+			log.Info("\n\n[Name] ", v.Name)
+			log.Info("\n[Spec] ", v.Spec)
+			log.Info("\n[Labels] ", v.Labels)
+			log.Info("\n[Annotations] ", v.Annotations)
+			log.Info("\n[ObjMeta] ", v.ObjectMeta)
 		}
 
 	}
@@ -116,10 +122,11 @@ func CollectLogs(c Collector) error {
 	if c.Opts.Debug {
 		log.Info("Here statefullsets list: \n")
 		for _, v := range statefullsets.Items {
-			log.Info("\n\nName: ", v.Name)
-			log.Info("\nSpec: ", v.Spec)
-			log.Info("\nLabels: ", v.Labels)
-			log.Info("\nAnnotations", v.Annotations)
+			log.Info("\n\n[Name] ", v.Name)
+			log.Info("\n[Spec] ", v.Spec)
+			log.Info("\n[Labels] ", v.Labels)
+			log.Info("\n[Annotations] ", v.Annotations)
+			log.Info("\n[ObjMeta] ", v.ObjectMeta)
 		}
 
 	}
@@ -132,10 +139,11 @@ func CollectLogs(c Collector) error {
 	if c.Opts.Debug {
 		log.Info("Here daemonsets list: \n")
 		for _, v := range daemonsets.Items {
-			log.Info("\n\nName: ", v.Name)
-			log.Info("\nSpec: ", v.Spec)
-			log.Info("\nLabels: ", v.Labels)
-			log.Info("\nAnnotations", v.Annotations)
+			log.Info("\n\n[Name] ", v.Name)
+			log.Info("\n[Spec] ", v.Spec)
+			log.Info("\n[Labels] ", v.Labels)
+			log.Info("\n[Annotations] ", v.Annotations)
+			log.Info("\n[ObjMeta] ", v.ObjectMeta)
 		}
 
 	}
@@ -155,9 +163,9 @@ func CollectLogs(c Collector) error {
 		deploymentMetas = append(dsMetas, d.ObjectMeta)
 	}
 
-	filteredDeployments := filterByAnnotation(deploymentMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name)
-	filteredStatefullsets := filterByAnnotation(stsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name)
-	filteredDaemonsets := filterByAnnotation(dsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name)
+	filteredDeployments := filterByAnnotation(deploymentMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name, c.Opts.Debug)
+	filteredStatefullsets := filterByAnnotation(stsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name, c.Opts.Debug)
+	filteredDaemonsets := filterByAnnotation(dsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name, c.Opts.Debug)
 
 	if c.Opts.Debug {
 		log.Info("Here filtered deployments list: ", filteredDeployments)
