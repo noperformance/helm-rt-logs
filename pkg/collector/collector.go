@@ -154,13 +154,13 @@ func CollectLogs(c Collector) error {
 	}
 
 	var stsMetas []v1.ObjectMeta
-	for _, d := range statefullsets.Items {
-		deploymentMetas = append(stsMetas, d.ObjectMeta)
+	for _, s := range statefullsets.Items {
+		stsMetas = append(stsMetas, s.ObjectMeta)
 	}
 
 	var dsMetas []v1.ObjectMeta
 	for _, d := range daemonsets.Items {
-		deploymentMetas = append(dsMetas, d.ObjectMeta)
+		dsMetas = append(dsMetas, d.ObjectMeta)
 	}
 
 	filteredDeployments := filterByAnnotation(deploymentMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name, c.Opts.Debug)
