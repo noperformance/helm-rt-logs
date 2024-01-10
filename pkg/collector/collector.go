@@ -98,7 +98,14 @@ func CollectLogs(c Collector) error {
 	}
 
 	if c.Opts.Debug {
-		log.Info("Here deployments list: ", deployments)
+		log.Info("Here deployments list: \n")
+		for _, v := range deployments.Items {
+			log.Info("\n\nName: ", v.Name)
+			log.Info("\nSpec: ", v.Spec)
+			log.Info("\nLabels: ", v.Labels)
+			log.Info("\nAnnotations", v.Annotations)
+		}
+
 	}
 
 	statefullsets, err := c.KubeClient.AppsV1().StatefulSets(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{})
@@ -107,7 +114,14 @@ func CollectLogs(c Collector) error {
 	}
 
 	if c.Opts.Debug {
-		log.Info("Here statefullsets list: ", statefullsets)
+		log.Info("Here statefullsets list: \n")
+		for _, v := range statefullsets.Items {
+			log.Info("\n\nName: ", v.Name)
+			log.Info("\nSpec: ", v.Spec)
+			log.Info("\nLabels: ", v.Labels)
+			log.Info("\nAnnotations", v.Annotations)
+		}
+
 	}
 
 	daemonsets, err := c.KubeClient.AppsV1().DaemonSets(c.ReleaseInfo.Namespace).List(ctx, v1.ListOptions{})
@@ -116,7 +130,14 @@ func CollectLogs(c Collector) error {
 	}
 
 	if c.Opts.Debug {
-		log.Info("Here daemonsets list: ", daemonsets)
+		log.Info("Here daemonsets list: \n")
+		for _, v := range daemonsets.Items {
+			log.Info("\n\nName: ", v.Name)
+			log.Info("\nSpec: ", v.Spec)
+			log.Info("\nLabels: ", v.Labels)
+			log.Info("\nAnnotations", v.Annotations)
+		}
+
 	}
 
 	var deploymentMetas []v1.ObjectMeta
