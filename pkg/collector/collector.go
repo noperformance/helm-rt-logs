@@ -87,7 +87,7 @@ func (c *Collector) CollectLogs() error {
 			c.CancelFunction()
 		})
 	}
-
+	//find all resources
 	deployments, err := c.KubeClient.AppsV1().Deployments(c.ReleaseInfo.Namespace).List(c.Ctx, v1.ListOptions{})
 	if err != nil {
 		return err
@@ -153,7 +153,7 @@ func (c *Collector) CollectLogs() error {
 	for _, d := range daemonsets.Items {
 		dsMetas = append(dsMetas, d.ObjectMeta)
 	}
-
+	// filter all resources
 	filteredDeployments := filterByAnnotation(deploymentMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name, c.Opts.Debug)
 	filteredStatefullsets := filterByAnnotation(stsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name, c.Opts.Debug)
 	filteredDaemonsets := filterByAnnotation(dsMetas, "meta.helm.sh/release-name", c.ReleaseInfo.Name, c.Opts.Debug)
@@ -164,7 +164,7 @@ func (c *Collector) CollectLogs() error {
 		log.Info("Here filtered daemonsets list: ", filteredDaemonsets)
 	}
 
-	// Обработка Deployment
+	// process all resources
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -173,7 +173,6 @@ func (c *Collector) CollectLogs() error {
 		}
 	}()
 
-	// Обработка StatefulSets
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -182,7 +181,6 @@ func (c *Collector) CollectLogs() error {
 		}
 	}()
 
-	// Обработка DaemonSets
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -201,7 +199,7 @@ func (c *Collector) CollectLogs() error {
 	}
 
 	if !c.PodsFound {
-		fmt.Print("no pods found")
+		fmt.Print("No pods to tail logs from found. (probably all pods in Running phase for -o option, otherwise no pods in Release")
 		c.CancelFunction()
 	}
 	<-c.Ctx.Done()

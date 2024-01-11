@@ -1,6 +1,6 @@
 ---
 name: "rt-logs"
-version: "v0.0.24"
+version: "v0.0.25"
 usage: "watch logs and events in realtime"
 description: |-
   Select your release and send output of release pods into your CI/CD pipeline
