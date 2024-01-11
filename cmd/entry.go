@@ -17,12 +17,11 @@ import (
 )
 
 type rtLogsCmd struct {
-	release                 string // release name
-	stopTimeout             int    // timeout to stop the tail
-	timeSince               int64  // time since to start the tail
-	stopString              string // string to stop the tail
-	waitingFailedPodTimeout int    // waiting for Running phase in seconds timeout
-	onlyFailed              bool   // tail only non-running pods
+	release     string // release name
+	stopTimeout int    // timeout to stop the tail
+	timeSince   int64  // time since to start the tail
+	stopString  string // string to stop the tail
+	onlyFailed  bool   // tail only non-running pods
 
 	debug bool // for debug, you know
 
@@ -63,7 +62,6 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 	f.IntVar(&rtl.stopTimeout, "stop-timeout", 0, "timeout to stop the logs, in Seconds!")
 	f.StringVar(&rtl.stopString, "stop-string", "", "string to stop the logs")
 	f.Int64VarP(&rtl.timeSince, "time-since", "s", 0, "time since to start the logs")
-	f.IntVarP(&rtl.waitingFailedPodTimeout, "wait-fail-pods-timeout", "t", 60, "waiting for Running phase pods timeout")
 	f.BoolVarP(&rtl.onlyFailed, "only-failed", "o", false, "tail only pods that have non Running phase")
 	f.BoolVarP(&rtl.debug, "debug", "d", false, "enable debug")
 
@@ -97,12 +95,11 @@ func (e *rtLogsCmd) run() error {
 	}
 
 	c := collector.RtLogsOpts{
-		StopTimeout:             e.stopTimeout,
-		StopString:              e.stopString,
-		TimeSince:               e.timeSince,
-		WaitingFailedPodTimeout: e.waitingFailedPodTimeout,
-		OnlyFailed:              e.onlyFailed,
-		Debug:                   e.debug,
+		StopTimeout: e.stopTimeout,
+		StopString:  e.stopString,
+		TimeSince:   e.timeSince,
+		OnlyFailed:  e.onlyFailed,
+		Debug:       e.debug,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

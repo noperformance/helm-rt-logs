@@ -3,6 +3,8 @@ package collector
 import (
 	"context"
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -12,12 +14,11 @@ import (
 )
 
 type RtLogsOpts struct {
-	StopTimeout             int
-	StopString              string
-	TimeSince               int64
-	WaitingFailedPodTimeout int
-	OnlyFailed              bool
-	Debug                   bool
+	StopTimeout int
+	StopString  string
+	TimeSince   int64
+	OnlyFailed  bool
+	Debug       bool
 }
 
 type Collector struct {
@@ -29,7 +30,8 @@ type Collector struct {
 	PodsFound      bool
 }
 
-func (c *Collector) ProcessResources(resourceType string, resourceNames []string) error {
+func (c *Collector) ProcessResources(resourceType string, resourceNames []string, podsFoundChan chan bool) error {
+	var wg sync.WaitGroup
 	suitablePodsFound := false
 
 	for _, resourceName := range resourceNames {
@@ -39,35 +41,46 @@ func (c *Collector) ProcessResources(resourceType string, resourceNames []string
 		}
 
 		if len(pods) == 0 {
-			return nil
+			continue
 		} else {
 			c.PodsFound = true
 		}
 
 		for _, pod := range pods {
-
 			for pod.Status.Phase == "Pending" {
 				fmt.Printf("[Pod %s] still in pending phase \n", pod.Name)
 				time.Sleep(15 * time.Second)
 			}
 
-			if c.Opts.OnlyFailed && pod.Status.Phase == "Running" {
-				return nil
+			if c.Opts.OnlyFailed && pod.Status.Phase != "Failed" {
+				continue
 			}
 
 			suitablePodsFound = true
-			c.TailLogs(pod, resourceType, resourceName)
+			wg.Add(1)
+			go func(pod corev1.Pod) {
+				defer wg.Done()
+				c.TailLogs(pod, resourceType, resourceName)
+			}(pod)
 		}
 	}
 
-	if !suitablePodsFound {
-		c.PodsFound = false
+	if suitablePodsFound {
+		select {
+		case podsFoundChan <- true:
+		default:
+		}
 	}
+
+	wg.Wait()
 
 	return nil
 }
 
 func (c *Collector) CollectLogs() error {
+
+	var wg sync.WaitGroup
+	podsFoundChan := make(chan bool, 1)
 
 	if c.Opts.StopTimeout > 0 {
 		time.AfterFunc(time.Duration(c.Opts.StopTimeout)*time.Second, func() {
@@ -151,14 +164,40 @@ func (c *Collector) CollectLogs() error {
 		log.Info("Here filtered daemonsets list: ", filteredDaemonsets)
 	}
 
-	if err := c.ProcessResources("deployment", filteredDeployments); err != nil {
-		return err
-	}
-	if err := c.ProcessResources("statefulset", filteredStatefullsets); err != nil {
-		return err
-	}
-	if err := c.ProcessResources("daemonset", filteredDaemonsets); err != nil {
-		return err
+	// Обработка Deployment
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := c.ProcessResources("deployment", filteredDeployments, podsFoundChan); err != nil {
+			log.Printf("Error processing deployments: %s", err)
+		}
+	}()
+
+	// Обработка StatefulSets
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := c.ProcessResources("statefulset", filteredStatefullsets, podsFoundChan); err != nil {
+			log.Printf("Error processing statefulsets: %s", err)
+		}
+	}()
+
+	// Обработка DaemonSets
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := c.ProcessResources("daemonset", filteredDaemonsets, podsFoundChan); err != nil {
+			log.Printf("Error processing daemonsets: %s", err)
+		}
+	}()
+
+	wg.Wait()
+
+	select {
+	case <-podsFoundChan:
+		c.PodsFound = true
+	default:
+		c.PodsFound = false
 	}
 
 	if !c.PodsFound {
