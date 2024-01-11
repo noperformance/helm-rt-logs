@@ -18,7 +18,7 @@ Based on the version in `plugin.yaml`, release binary will be downloaded from Gi
 ```console
 $ helm plugin install https://github.com/helm/helm-rt-logs
 Downloading and installing helm-rt-logs v0.1.0 ...
-https://github.com/helm/helm-rt-logs/releases/download/v0.1.0/helm-mapkubeapis_0.1.0_darwin_amd64.tar.gz
+https://github.com/helm/helm-rt-logs/releases/download/v0.1.0/helm-rt-logs_0.1.0_darwin_amd64.tar.gz
 Installed plugin: rt-logs
 ```
 
