@@ -54,4 +54,17 @@ Flags:
   -d, --debug                   enables debug messages
 ```
 
-no old helm! 
+## Support old helm
+No
+
+
+## Todo
+- [ ] Enhance Debugging Features
+- [ ] Break down large functions into smaller, more manageable ones. / Improve code comments for better understanding and maintenance.
+- [ ] Implement Advanced Error Handling
+- [ ] Optimize Performance / Goroutines control
+- [ ] Expand Filtering Capabilities / Additional flags
+- [ ] Tests
+- [ ] ? CI/CD Pipeline Integration ?
+
+
