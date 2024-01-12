@@ -11,11 +11,10 @@ import (
 	"helm-rt-logs/pkg/kubeclient"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
-
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
+// rtLogsCmd defines the command structure for retrieving runtime logs of a Helm release.
+// It includes parameters for specifying the release, log tailing behavior, and Kubernetes configuration.
 type rtLogsCmd struct {
 	release     string // release name
 	stopTimeout int    // timeout to stop the tail
@@ -68,14 +67,8 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 	return cmd
 }
 
-func buildConfigFromFlags(context, kubeconfigPath string) (*rest.Config, error) {
-	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath},
-		&clientcmd.ConfigOverrides{
-			CurrentContext: context,
-		}).ClientConfig()
-}
-
+// run executes the log retrieval process for a Helm release.
+// It handles Kubernetes context setting, fetching release information, and log collection.
 func (e *rtLogsCmd) run() error {
 
 	getRelease := action.NewGet(e.cfg)

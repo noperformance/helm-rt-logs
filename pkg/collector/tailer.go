@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// TailLogs initiates a log stream from a specified Kubernetes pod and continuously outputs the logs to the console.
+// It supports options such as following the log stream and filtering logs based on a time range.
+// The function also handles special cases where the pod has failed or is in an unknown phase.
 func (c *Collector) TailLogs(pod corev1.Pod, resType, resName string) {
 	var (
 		podLogOptions corev1.PodLogOptions

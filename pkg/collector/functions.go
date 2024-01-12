@@ -8,6 +8,8 @@ import (
 	"context"
 )
 
+// GetPodsFromResource retrieves a list of Pods associated with a given Kubernetes resource (Deployment, StatefulSet, or DaemonSet).
+// It uses the resource type and name to identify the specific resource and then fetches the pods based on the resource's label selector.
 func (c *Collector) GetPodsFromResource(resourceType string, resourceName string) ([]corev1.Pod, error) {
 	var labelSelector string
 
@@ -41,6 +43,9 @@ func (c *Collector) GetPodsFromResource(resourceType string, resourceName string
 	return pods.Items, nil
 }
 
+// filterByAnnotation filters a slice of Kubernetes resources based on a specified annotation and its value.
+// It iterates over the resources and includes those that have an annotation matching the provided value.
+// The function also supports debug logging to provide insights into the filtering process.
 func filterByAnnotation(resources []v1.ObjectMeta, annotation, value string, debug bool) []string {
 	var filtered []string
 	for _, resource := range resources {

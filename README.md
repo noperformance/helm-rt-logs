@@ -5,6 +5,10 @@
 [![CircleCI](https://dl.circleci.com/status-badge/img/circleci/L6LqkTDTpv1YyfotNqY4bH/9yV8FQC1uYaNy7ug5dzyxx/tree/main.svg?style=svg&circle-token=73e2fd2d2d2f01cd03a1d832f58a56ec596026f0)](https://dl.circleci.com/status-badge/redirect/circleci/L6LqkTDTpv1YyfotNqY4bH/9yV8FQC1uYaNy7ug5dzyxx/tree/main)
 [![Release](https://img.shields.io/github/release/noperformance/helm-rt-logs.svg?style=flat-square)](https://github.com/noperformance/helm-rt-logs/releases/latest)
 
+## Overview:
+
+rt-logs is a Helm plugin designed for CI/CD pipelines, enabling real-time log collection from Kubernetes resources without direct cluster access. It's tailored for scenarios requiring post-release log analysis in restricted-access environments.
+
 ## Prerequisite
 
 - Helm client with `rt-logs` plugin installed on the same system

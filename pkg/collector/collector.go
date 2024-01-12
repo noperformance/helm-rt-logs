@@ -30,6 +30,9 @@ type Collector struct {
 	PodsFound      bool
 }
 
+// ProcessResources handles the log collection from a set of Kubernetes resources (like deployments, statefulsets, or daemonsets) associated with a Helm release.
+// It iterates over each resource, retrieves associated pods, and tails their logs concurrently.
+// The function also handles pods in pending phase and filters pods based on their status if specified.
 func (c *Collector) ProcessResources(resourceType string, resourceNames []string, podsFoundChan chan bool) error {
 	var wg sync.WaitGroup
 	suitablePodsFound := false
@@ -77,6 +80,9 @@ func (c *Collector) ProcessResources(resourceType string, resourceNames []string
 	return nil
 }
 
+// CollectLogs handles the process of collecting logs from Kubernetes resources associated with a specific Helm release.
+// It orchestrates the retrieval of deployments, statefulsets, and daemonsets, and filters them based on annotations.
+// The function also manages concurrent processing of these resources to tail logs.
 func (c *Collector) CollectLogs() error {
 
 	var wg sync.WaitGroup
@@ -199,7 +205,7 @@ func (c *Collector) CollectLogs() error {
 	}
 
 	if !c.PodsFound {
-		fmt.Print("No pods to tail logs from found. (probably all pods in Running phase for -o option, otherwise no pods in Release")
+		fmt.Print("No pods to tail logs from found (probably all pods in Running phase for -o option, otherwise no pods in Release).")
 		c.CancelFunction()
 	}
 	<-c.Ctx.Done()
