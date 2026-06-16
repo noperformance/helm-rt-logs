@@ -47,6 +47,19 @@ Helm hands it to the plugin, which would treat the rest as positional arguments.
 Tailing stops when every stream ends, the stop timeout fires, the stop string is
 matched, or the process gets `SIGINT`/`SIGTERM` (Ctrl-C).
 
+## Exit codes
+
+Helm forwards the plugin's exit code, so it is safe to gate a CI/CD step on it:
+
+| Situation | Exit code |
+|-----------|-----------|
+| Streams ended, `--stop-timeout` fired, or `--stop-string` matched | `0` |
+| Interrupted by `SIGINT`/`SIGTERM` (Ctrl-C) | `0` |
+| Release not found, missing/extra argument, unknown flag, bad value | non-zero |
+
+> A `--stop-timeout` always exits `0` — it stops watching, it is not a failure
+> signal. The timeout will not, by itself, fail the pipeline.
+
 ## Examples
 
 Tail everything in the release:
