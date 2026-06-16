@@ -82,6 +82,30 @@ $ helm -n prod --kube-context ci-cluster rt-logs my-release \
     -- --stop-string "Migration complete" --stop-timeout 300 -c migrate
 ```
 
+### Alongside `helm install` / `helm upgrade`
+
+The release must already exist, so run `rt-logs` right after the deploy. Watch the
+rollout with a time cap so the step can't hang:
+```console
+$ helm upgrade --install my-release ./chart -n prod
+$ helm rt-logs my-release -n prod -- --stop-timeout 180
+```
+
+Deploy, then watch until a readiness marker appears (or the timeout fires):
+```console
+$ helm upgrade --install my-release ./chart -n prod
+$ helm rt-logs my-release -n prod -- --stop-string "listening on :8080" --stop-timeout 120
+```
+
+Inspect a bad rollout — only non-Running pods, last 50 lines each, with timestamps:
+```console
+$ helm upgrade --install my-release ./chart -n prod
+$ helm rt-logs my-release -n prod -- -o --tail 50 --timestamps --stop-timeout 60
+```
+
+> `--wait` on `helm upgrade` blocks until pods are Ready, which hides early startup
+> logs. Drop `--wait` (as above) when you want `rt-logs` to stream the rollout live.
+
 ## Expected output
 
 Line format: `[type/name][pod][container][phase] log line`.
