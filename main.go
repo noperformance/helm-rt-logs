@@ -11,6 +11,9 @@ import (
 	"helm.sh/helm/v3/pkg/cli"
 )
 
+// version is set at build time via -ldflags "-X main.version=...".
+var version = "dev"
+
 func main() {
 	settings := cli.New()
 
@@ -30,6 +33,7 @@ func main() {
 		log.Fatalf("failed to init helm action config: %s", err)
 	}
 	command := cmd.NewRtLogsCmd(actionConfig, os.Stdout, settings)
+	command.Version = version
 	if err := command.Execute(); err != nil {
 		os.Exit(1)
 	}

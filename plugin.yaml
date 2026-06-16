@@ -5,7 +5,6 @@ usage: "watch logs and events in realtime"
 description: |-
   Select your release and send output of release pods into your CI/CD pipeline
 ignoreFlags: false
-useTunnel: true
 command: "$HELM_PLUGIN_DIR/bin/helm-rt-logs"
 hooks:
   install: "cd $HELM_PLUGIN_DIR; scripts/install_plugin.sh"

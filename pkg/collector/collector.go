@@ -22,6 +22,8 @@ type RtLogsOpts struct {
 	StopTimeout int
 	StopString  string
 	TimeSince   int64
+	Tail        int64 // last N lines per container; <0 means all
+	Timestamps  bool  // prefix each line with an RFC3339 timestamp
 	OnlyFailed  bool
 	Container   string // when set, tail only this container
 	Debug       bool

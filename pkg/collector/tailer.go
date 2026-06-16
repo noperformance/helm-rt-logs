@@ -13,11 +13,15 @@ import (
 // the stream ends (container terminated), the context is cancelled, or StopString is seen.
 func (c *Collector) TailLogs(pod corev1.Pod, container, resType, resName string) {
 	podLogOptions := corev1.PodLogOptions{
-		Follow:    true,
-		Container: container,
+		Follow:     true,
+		Container:  container,
+		Timestamps: c.Opts.Timestamps,
 	}
 	if c.Opts.TimeSince > 0 {
 		podLogOptions.SinceSeconds = &c.Opts.TimeSince
+	}
+	if c.Opts.Tail >= 0 {
+		podLogOptions.TailLines = &c.Opts.Tail
 	}
 
 	if pod.Status.Phase == corev1.PodFailed || pod.Status.Phase == corev1.PodUnknown {

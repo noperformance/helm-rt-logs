@@ -19,7 +19,8 @@ elif [ "$(uname)" = "Linux" ] ; then
         url="https://github.com/noperformance/helm-rt-logs/releases/download/v${version}/helm-rt-logs_${version}_linux_amd64.tar.gz"
     fi
 else
-    url="https://github.com/noperformance/helm-rt-logs/releases/download/v${version}/helm-rt-logs_${version}_windows_amd64.tar.gz"
+    echo "Unsupported OS: $(uname). On Windows use WSL." >&2
+    exit 1
 fi
 
 echo "$url"
@@ -36,8 +37,7 @@ else
     wget -q "${url}" -O "releases/v${version}.tar.gz"
 fi
 tar xzf "releases/v${version}.tar.gz" -C "releases/v${version}"
-mv "releases/v${version}/helm-rt-logs" "bin/helm-rt-logs" || \
-  mv "releases/v${version}/helm-rt-logs.exe" "bin/rt-logs"
+mv "releases/v${version}/helm-rt-logs" "bin/helm-rt-logs"
 mv "releases/v${version}/plugin.yaml" .
 mv "releases/v${version}/README.md" .
 mv "releases/v${version}/LICENSE" .

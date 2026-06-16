@@ -35,7 +35,7 @@ func newCollector(t *testing.T, objs ...runtime.Object) (*Collector, *bytes.Buff
 	c := &Collector{
 		KubeClient:     cs,
 		ReleaseInfo:    &release.Release{Name: "rel", Namespace: "ns"},
-		Opts:           &RtLogsOpts{},
+		Opts:           &RtLogsOpts{Tail: -1},
 		Ctx:            ctx,
 		CancelFunction: cancel,
 		Out:            buf,

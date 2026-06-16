@@ -21,6 +21,8 @@ type rtLogsCmd struct {
 	release     string // release name
 	stopTimeout int    // seconds after which tailing stops (0 = no timeout)
 	timeSince   int64  // only show logs newer than this many seconds (0 = from start)
+	tail        int64  // last N lines per container (<0 = all)
+	timestamps  bool   // prefix each line with an RFC3339 timestamp
 	stopString  string // stop tailing once this substring is seen in a log line
 	onlyFailed  bool   // tail only pods that are not in the Running phase
 	container   string // tail only this container (empty = all containers)
@@ -56,6 +58,8 @@ func NewRtLogsCmd(cfg *action.Configuration, out io.Writer, envs *cli.EnvSetting
 	f.IntVar(&rtl.stopTimeout, "stop-timeout", 0, "stop tailing after N seconds")
 	f.StringVar(&rtl.stopString, "stop-string", "", "stop tailing once this substring appears in a log line")
 	f.Int64VarP(&rtl.timeSince, "time-since", "s", 0, "show logs newer than N seconds")
+	f.Int64Var(&rtl.tail, "tail", -1, "last N lines per container (-1 = all)")
+	f.BoolVar(&rtl.timestamps, "timestamps", false, "prefix each line with a timestamp")
 	f.BoolVarP(&rtl.onlyFailed, "only-failed", "o", false, "tail only pods that are not Running")
 	f.StringVarP(&rtl.container, "container", "c", "", "tail only this container (default: all)")
 	f.BoolVarP(&rtl.debug, "debug", "d", false, "enable debug output")
@@ -93,6 +97,8 @@ func (e *rtLogsCmd) run(parent context.Context) error {
 		StopTimeout: e.stopTimeout,
 		StopString:  e.stopString,
 		TimeSince:   e.timeSince,
+		Tail:        e.tail,
+		Timestamps:  e.timestamps,
 		OnlyFailed:  e.onlyFailed,
 		Container:   e.container,
 		Debug:       e.debug,

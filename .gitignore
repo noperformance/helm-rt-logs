@@ -1,0 +1,5 @@
+bin/
+config/
+releases/
+dist/
+*.tar.gz

@@ -42,6 +42,8 @@ vars. Plugin flags go **after** `--`, where Helm passes them through untouched.
 | `--stop-string` | | stop once this substring appears in a log line |
 | `--stop-timeout` | | stop after N seconds |
 | `--time-since` | `-s` | show logs newer than N seconds |
+| `--tail` | | last N lines per container (`-1` = all) |
+| `--timestamps` | | prefix each line with a timestamp |
 | `--debug` | `-d` | enable debug output |
 
 Tailing stops when every stream ends, the stop timeout fires, the stop string is
