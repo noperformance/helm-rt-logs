@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Go Report Card](https://goreportcard.com/badge/github.com/noperformance/helm-rt-logs)](https://goreportcard.com/report/github.com/noperformance/helm-rt-logs)
-[![CircleCI](https://dl.circleci.com/status-badge/img/circleci/L6LqkTDTpv1YyfotNqY4bH/9yV8FQC1uYaNy7ug5dzyxx/tree/main.svg?style=svg&circle-token=73e2fd2d2d2f01cd03a1d832f58a56ec596026f0)](https://dl.circleci.com/status-badge/redirect/circleci/L6LqkTDTpv1YyfotNqY4bH/9yV8FQC1uYaNy7ug5dzyxx/tree/main)
+[![CI](https://github.com/noperformance/helm-rt-logs/actions/workflows/ci.yml/badge.svg)](https://github.com/noperformance/helm-rt-logs/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/release/noperformance/helm-rt-logs.svg?style=flat-square)](https://github.com/noperformance/helm-rt-logs/releases/latest)
 
 Stream logs from all pods of a Helm release in real time. Built for CI/CD: run it
