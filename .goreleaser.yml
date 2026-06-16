@@ -1,3 +1,4 @@
+version: 2
 builds:
   - main: .
     binary: helm-rt-logs
@@ -6,11 +7,17 @@ builds:
     goos:
       - darwin
       - linux
+      - windows
     goarch:
       - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
 archives:
   - id: archive
-    format: tar.gz
+    formats:
+      - tar.gz
     files:
       - README.md
       - LICENSE

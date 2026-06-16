@@ -13,6 +13,13 @@ bootstrap:
 	export GOPROXY=$(MOD_PROXY_URL) && \
 	go mod download
 
+.PHONY: vet
+vet:
+	go vet ./...
+
+.PHONY: lint
+lint: vet
+
 .PHONY: test
 test:
 	go test -v ./...

@@ -27,7 +27,7 @@ func main() {
 
 	err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), log.Printf)
 	if err != nil {
-		return
+		log.Fatalf("failed to init helm action config: %s", err)
 	}
 	command := cmd.NewRtLogsCmd(actionConfig, os.Stdout, settings)
 	if err := command.Execute(); err != nil {

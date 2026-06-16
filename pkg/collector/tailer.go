@@ -1,57 +1,56 @@
 package collector
 
 import (
-	"fmt"
-	corev1 "k8s.io/api/core/v1"
+	"bufio"
+	"errors"
+	"io"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
-// TailLogs initiates a log stream from a specified Kubernetes pod and continuously outputs the logs to the console.
-// It supports options such as following the log stream and filtering logs based on a time range.
-// The function also handles special cases where the pod has failed or is in an unknown phase.
-func (c *Collector) TailLogs(pod corev1.Pod, resType, resName string) {
-	var (
-		podLogOptions corev1.PodLogOptions
-	)
-
+// TailLogs streams the logs of a single container and writes them line by line until
+// the stream ends (container terminated), the context is cancelled, or StopString is seen.
+func (c *Collector) TailLogs(pod corev1.Pod, container, resType, resName string) {
+	podLogOptions := corev1.PodLogOptions{
+		Follow:    true,
+		Container: container,
+	}
 	if c.Opts.TimeSince > 0 {
 		podLogOptions.SinceSeconds = &c.Opts.TimeSince
 	}
 
-	podLogOptions.Follow = true
-
-	if pod.Status.Phase == "Failed" || pod.Status.Phase == "Unknown" {
-		fmt.Printf("Pod %s failed with 60s timeout \n with message: %s\n with reason: %s\n", pod.Name, pod.Status.Message, pod.Status.Reason)
+	if pod.Status.Phase == corev1.PodFailed || pod.Status.Phase == corev1.PodUnknown {
+		c.printf("[Pod %s] phase=%s message=%q reason=%q\n", pod.Name, pod.Status.Phase, pod.Status.Message, pod.Status.Reason)
 	}
 
 	req := c.KubeClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOptions)
 	stream, err := req.Stream(c.Ctx)
 	if err != nil {
-		fmt.Printf("Error opening stream to pod %s: %s\n", pod.Name, err)
+		c.printf("[Pod %s/%s] error opening stream: %s\n", pod.Name, container, err)
 		return
 	}
 	defer stream.Close()
 
-	buf := make([]byte, 2000)
-	for {
+	scanner := bufio.NewScanner(stream)
+	for scanner.Scan() {
 		select {
 		case <-c.Ctx.Done():
 			return
 		default:
-			n, err := stream.Read(buf)
-			if err != nil {
-				fmt.Printf("Error reading from stream: %s\n", err)
-				return
-			}
-
-			if n > 0 {
-				line := string(buf[:n])
-				fmt.Printf("[ObjType: %v][ObjName: %v][PodName: %v][PodPhase: %v] %v \n --- \n", resType, resName, pod.Name, pod.Status.Phase, line)
-				if c.Opts.StopString != "" && strings.Contains(line, c.Opts.StopString) {
-					c.CancelFunction()
-					return
-				}
-			}
 		}
+
+		line := scanner.Text()
+		c.printf("[%s/%s][pod=%s][container=%s][phase=%s] %s\n",
+			resType, resName, pod.Name, container, pod.Status.Phase, line)
+
+		if c.Opts.StopString != "" && strings.Contains(line, c.Opts.StopString) {
+			c.CancelFunction()
+			return
+		}
+	}
+
+	if err := scanner.Err(); err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, c.Ctx.Err()) {
+		c.printf("[Pod %s/%s] stream error: %s\n", pod.Name, container, err)
 	}
 }
