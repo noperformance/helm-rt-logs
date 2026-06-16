@@ -19,14 +19,13 @@ func main() {
 
 	actionConfig := new(action.Configuration)
 
-	// double check if the env vars are set
+	// Resolve the kubeconfig path: honor KUBECONFIG, otherwise fall back to ~/.kube/config.
+	// Always set it on settings so the path is respected regardless of HELM_KUBECONFIG.
 	kubeConfigEnv := os.Getenv("KUBECONFIG")
-
 	if kubeConfigEnv == "" {
-		home := homedir.HomeDir()
-		kubeConfigEnv = filepath.Join(home, ".kube", "config")
-		settings.KubeConfig = kubeConfigEnv
+		kubeConfigEnv = filepath.Join(homedir.HomeDir(), ".kube", "config")
 	}
+	settings.KubeConfig = kubeConfigEnv
 
 	err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), log.Printf)
 	if err != nil {

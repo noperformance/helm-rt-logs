@@ -23,15 +23,13 @@ access via a [kubeconfig](https://kubernetes.io/docs/concepts/configuration/orga
 ## Usage
 
 ```console
-$ helm rt-logs RELEASE [helm flags] -- [plugin flags]
+$ helm [helm flags] rt-logs RELEASE [plugin flags]
 ```
 
-Helm's own flags (`-n/--namespace`, `--kube-context`, `--kubeconfig`, `--debug`) go
-**before** `--`; Helm reads them and forwards them to the plugin via `HELM_*` env
-vars. Plugin flags go **after** `--`, where Helm passes them through untouched.
-
-> The `--` separator avoids any clash. In particular `--debug` belongs to Helm —
-> enable the plugin's own debug with `-d` after `--`.
+Put Helm's own flags (`-n/--namespace`, `--kube-context`, `--kubeconfig`) **before**
+the `rt-logs` name; Helm reads them and forwards them to the plugin via `HELM_*` env
+vars. Put plugin flags **after** the release name. Do **not** use a `--` separator —
+Helm hands it to the plugin, which would treat the rest as positional arguments.
 
 ### Plugin flags
 
@@ -56,30 +54,30 @@ Tail everything in the release:
 $ helm rt-logs my-release
 ```
 
-Pick namespace and context (Helm flags, before `--`):
+Pick namespace and context (Helm flags, before the plugin name):
 ```console
 $ helm -n production --kube-context staging rt-logs my-release
 ```
 
-Plugin flags after `--` — last 60s, stop after 2 min:
+Plugin flags after the release name — last 60s, stop after 2 min:
 ```console
-$ helm rt-logs my-release -- --time-since 60 --stop-timeout 120
+$ helm rt-logs my-release --time-since 60 --stop-timeout 120
 ```
 
 Wait for a marker line, then exit (handy in CI):
 ```console
-$ helm rt-logs my-release -- --stop-string "Server started on :8080"
+$ helm rt-logs my-release --stop-string "Server started on :8080"
 ```
 
 Only failing pods, single container, plugin debug:
 ```console
-$ helm -n prod rt-logs my-release -- -o -c app -d
+$ helm -n prod rt-logs my-release -o -c app -d
 ```
 
 CI gate: wait for a migration, cap the wait so the job can't hang:
 ```console
 $ helm -n prod --kube-context ci-cluster rt-logs my-release \
-    -- --stop-string "Migration complete" --stop-timeout 300 -c migrate
+    --stop-string "Migration complete" --stop-timeout 300 -c migrate
 ```
 
 ### Alongside `helm install` / `helm upgrade`
@@ -88,19 +86,19 @@ The release must already exist, so run `rt-logs` right after the deploy. Watch t
 rollout with a time cap so the step can't hang:
 ```console
 $ helm upgrade --install my-release ./chart -n prod
-$ helm rt-logs my-release -n prod -- --stop-timeout 180
+$ helm -n prod rt-logs my-release --stop-timeout 180
 ```
 
 Deploy, then watch until a readiness marker appears (or the timeout fires):
 ```console
 $ helm upgrade --install my-release ./chart -n prod
-$ helm rt-logs my-release -n prod -- --stop-string "listening on :8080" --stop-timeout 120
+$ helm -n prod rt-logs my-release --stop-string "listening on :8080" --stop-timeout 120
 ```
 
 Inspect a bad rollout — only non-Running pods, last 50 lines each, with timestamps:
 ```console
 $ helm upgrade --install my-release ./chart -n prod
-$ helm rt-logs my-release -n prod -- -o --tail 50 --timestamps --stop-timeout 60
+$ helm -n prod rt-logs my-release -o --tail 50 --timestamps --stop-timeout 60
 ```
 
 > `--wait` on `helm upgrade` blocks until pods are Ready, which hides early startup

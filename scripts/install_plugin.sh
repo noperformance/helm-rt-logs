@@ -9,19 +9,18 @@ fi
 version="$(cat plugin.yaml | grep "version" | cut -d '"' -f 2 | cut -d 'v' -f 2)"
 echo "Downloading and installing helm-rt-logs v${version} ..."
 
-url=""
-if [ "$(uname)" = "Darwin" ]; then
-    url="https://github.com/noperformance/helm-rt-logs/releases/download/v${version}/helm-rt-logs_${version}_darwin_amd64.tar.gz"
-elif [ "$(uname)" = "Linux" ] ; then
-    if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
-        url="https://github.com/noperformance/helm-rt-logs/releases/download/v${version}/helm-rt-logs_${version}_linux_arm64.tar.gz"
-    else
-        url="https://github.com/noperformance/helm-rt-logs/releases/download/v${version}/helm-rt-logs_${version}_linux_amd64.tar.gz"
-    fi
-else
-    echo "Unsupported OS: $(uname). On Windows use WSL." >&2
-    exit 1
-fi
+case "$(uname)" in
+    Darwin) os="darwin" ;;
+    Linux)  os="linux" ;;
+    *) echo "Unsupported OS: $(uname). On Windows use WSL." >&2; exit 1 ;;
+esac
+
+case "$(uname -m)" in
+    arm64|aarch64) arch="arm64" ;;
+    *) arch="amd64" ;;
+esac
+
+url="https://github.com/noperformance/helm-rt-logs/releases/download/v${version}/helm-rt-logs_${version}_${os}_${arch}.tar.gz"
 
 echo "$url"
 
